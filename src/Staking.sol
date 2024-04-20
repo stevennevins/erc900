@@ -8,7 +8,7 @@ import {Checkpoints} from "../lib/openzeppelin-contracts/contracts/utils/structs
 import {EnumerableSet} from "../lib/openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
 import {IERC900} from "./IERC900.sol";
 
-contract ERC900History is IERC900 {
+contract ERC900 is IERC900 {
     using SafeERC20 for IERC20;
     using Checkpoints for Checkpoints.Trace208;
 
