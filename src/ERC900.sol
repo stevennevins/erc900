@@ -41,6 +41,10 @@ contract ERC900 is IERC900{
         return _totalStaked;
     }
 
+    function stakers() external view returns (address[] memory) {
+        return _stakers.values();
+    }
+
     function isStaker(address user) external view returns (bool) {
         return _stakers.contains(user);
     }
