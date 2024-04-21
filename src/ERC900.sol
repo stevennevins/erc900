@@ -57,7 +57,7 @@ contract ERC900 is IERC900{
         return true;
     }
 
-    function _stakeFor(address payer, address user, uint256 amount, bytes memory data) internal {
+    function _stakeFor(address payer, address user, uint256 amount, bytes memory data) internal virtual {
         require(amount > 0, "Stake amount must be positive");
         require(user != address(0), "Cannot stake for zero address");
 
@@ -70,7 +70,7 @@ contract ERC900 is IERC900{
         IERC20(_token).safeTransferFrom(payer, address(this), amount);
     }
 
-    function _unstake(address user, uint256 amount, bytes memory data) internal {
+    function _unstake(address user, uint256 amount, bytes memory data) internal virtual {
         require(amount > 0, "Unstake amount must be positive");
         require(_stakes[user] >= amount, "Insufficient stake");
 
