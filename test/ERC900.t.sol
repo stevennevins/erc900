@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {ERC900} from "../src/ERC900.sol";
-import {MockERC20} from "./mocks/MockERC20.sol"; // Assuming you have a MockERC20 contract
+import {MockERC20} from "./mocks/MockERC20.sol"; 
 
 contract ERC900Test is Test {
     event Staked(address indexed user, uint256 amount, uint256 total, bytes data);
@@ -15,9 +15,9 @@ contract ERC900Test is Test {
     address internal staker1 = address(1);
     address internal staker2 = address(2);
     address internal staker3 = address(3);
-    uint256 internal stakeAmount1 = 100 * 10**18; // 100 tokens
-    uint256 internal stakeAmount2 = 150 * 10**18; // 150 tokens
-    uint256 internal stakeAmount3 = 200 * 10**18; // 200 tokens
+    uint256 internal stakeAmount1 = 100 * 10**18; 
+    uint256 internal stakeAmount2 = 150 * 10**18; 
+    uint256 internal stakeAmount3 = 200 * 10**18; 
 
     function setUp() public {
         mockToken = new MockERC20("Mock Token", "MTK");
@@ -68,7 +68,7 @@ function testPartialUnstakeTokens() public {
 }
 function testReStakeTokens() public {
     uint256 reStakeAmount = 50 * 10**18; // 50 tokens
-    uint256 expectedTotalStakeAfterReStake = stakeAmount1 + reStakeAmount;
+    uint256 totalAfterRestake = stakeAmount1 + reStakeAmount;
 
     mockToken.mint(staker1, stakeAmount1 + reStakeAmount);
     vm.startPrank(staker1);
@@ -77,8 +77,8 @@ function testReStakeTokens() public {
     erc900.stake(reStakeAmount, "");
     vm.stopPrank();
 
-    assertEq(erc900.totalStakedFor(staker1), expectedTotalStakeAfterReStake, "Staked amount should match the re-staked amount");
-    assertEq(erc900.totalStaked(), expectedTotalStakeAfterReStake, "Total staked should match the re-staked amount");
+    assertEq(erc900.totalStakedFor(staker1), totalAfterRestake, "Staked amount should match the re-staked amount");
+    assertEq(erc900.totalStaked(), totalAfterRestake, "Total staked should match the re-staked amount");
 }
 function testStakingByMultipleAddresses() public {
     mockToken.mint(staker1, stakeAmount1);
@@ -119,7 +119,6 @@ function testUnstakeMoreThanStaked() public {
 }
 
 function testStakeEventEmission() public {
-    // Mint tokens and stake them
     mockToken.mint(staker1, stakeAmount1);
     vm.startPrank(staker1);
     mockToken.approve(address(erc900), stakeAmount1);
@@ -132,7 +131,7 @@ function testStakeEventEmission() public {
 }
 
 function testUnstakeEventEmission() public {
-    uint256 unstakeAmount = 50 * 10**18; // 50 tokens
+    uint256 unstakeAmount = 50 * 10**18; 
 
     mockToken.mint(staker1, stakeAmount1);
     vm.startPrank(staker1);
@@ -146,7 +145,7 @@ function testUnstakeEventEmission() public {
     vm.stopPrank();
 }
 function testZeroAmountStake() public {
-    uint256 zeroStakeAmount = 0; // Zero tokens
+    uint256 zeroStakeAmount = 0; 
 
     mockToken.mint(staker1, zeroStakeAmount);
     vm.startPrank(staker1);
@@ -159,15 +158,13 @@ function testZeroAmountStake() public {
 }
 
 function testZeroAmountUnstake() public {
-    uint256 zeroUnstakeAmount = 0; // Zero tokens
+    uint256 zeroUnstakeAmount = 0; 
 
-    // Mint tokens and stake them
     mockToken.mint(staker1, stakeAmount1);
     vm.startPrank(staker1);
     mockToken.approve(address(erc900), stakeAmount1);
     erc900.stake(stakeAmount1, "");
 
-    // Attempt to unstake zero amount and expect revert
     vm.expectRevert("Unstake amount must be positive");
     erc900.unstake(zeroUnstakeAmount, "");
 
@@ -234,7 +231,7 @@ function testStakingAndUnstakingByMultipleAddresses() public {
     assertEq(erc900.totalStakedFor(staker1), 0, "Staker1 should have 0 staked after unstaking");
     assertEq(erc900.totalStakedFor(staker3), 0, "Staker3 should have 0 staked after unstaking");
 
-    uint256 totalStaked = stakeAmount2; // Only staker2's stake should remain
+    uint256 totalStaked = stakeAmount2; // staker2's stake should remain
     assertEq(erc900.totalStaked(), totalStaked, "Total staked amount mismatch after unstaking");
     assertTrue(erc900.isStaker(staker2), "Staker2 should still be in the stakers list");
     assertFalse(erc900.isStaker(staker1), "Staker1 should not be in the stakers list after unstaking");
