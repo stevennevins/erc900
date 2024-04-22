@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC900} from "./IERC900.sol";
 
 contract ERC900 is IERC900 {
     using SafeERC20 for IERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
 
     address private _token;
 
     mapping(address => uint256) private _stakes;
-    EnumerableSet.AddressSet private _stakers;
 
     uint256 private _totalStaked;
 
@@ -41,14 +38,6 @@ contract ERC900 is IERC900 {
         return _totalStaked;
     }
 
-    function stakers() external view returns (address[] memory) {
-        return _stakers.values();
-    }
-
-    function isStaker(address user) external view returns (bool) {
-        return _stakers.contains(user);
-    }
-
     function token() external view returns (address) {
         return _token;
     }
@@ -63,7 +52,6 @@ contract ERC900 is IERC900 {
 
         _totalStaked += amount;
         _stakes[user] += amount;
-        _stakers.add(user);
 
         emit Staked(user, amount, _stakes[user], data);
 
@@ -76,10 +64,6 @@ contract ERC900 is IERC900 {
 
         _stakes[user] -= amount;
         _totalStaked -= amount;
-
-        if (_stakes[user] == 0) {
-            _stakers.remove(user);
-        }
 
         emit Unstaked(user, amount, _stakes[user], data);
 

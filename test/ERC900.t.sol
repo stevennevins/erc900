@@ -240,9 +240,6 @@ contract ERC900Test is Test {
 
         uint256 totalStaked = stakeAmount2; // staker2's stake should remain
         assertEq(erc900.totalStaked(), totalStaked, "Total staked amount mismatch after unstaking");
-        assertTrue(erc900.isStaker(staker2), "Staker2 should still be in the stakers list");
-        assertFalse(erc900.isStaker(staker1), "Staker1 should not be in the stakers list after unstaking");
-        assertFalse(erc900.isStaker(staker3), "Staker3 should not be in the stakers list after unstaking");
     }
     function testStakeForAnotherUser() public {
         address beneficiary = address(4);
@@ -255,8 +252,6 @@ contract ERC900Test is Test {
 
         assertEq(erc900.totalStakedFor(beneficiary), stakeAmount1, "Beneficiary's staked amount should match");
         assertEq(erc900.totalStakedFor(staker1), 0, "Staker's staked amount should be zero");
-        assertTrue(erc900.isStaker(beneficiary), "Beneficiary should be registered as staker");
-        assertFalse(erc900.isStaker(staker1), "Staker should not be registered as staker after staking for another");
     }
     function testStakeForZeroAddress() public {
         mockToken.mint(staker1, stakeAmount1);
@@ -271,15 +266,17 @@ contract ERC900Test is Test {
     function testUnstakeWithZeroBalance() public {
         mockToken.mint(staker1, stakeAmount1);
 
+        // Stake and then unstake all tokens
         vm.startPrank(staker1);
         mockToken.approve(address(erc900), stakeAmount1);
         erc900.stake(stakeAmount1, "");
         erc900.unstake(stakeAmount1, "");
         vm.stopPrank();
 
+        // Attempt to unstake again with zero balance
         vm.startPrank(staker1);
         vm.expectRevert("Insufficient stake");
-        erc900.unstake(10 * 10 ** 18, "");
+        erc900.unstake(10 * 10 ** 18, ""); // Attempting to unstake more than the current stake (which is zero)
         vm.stopPrank();
     }
 }
