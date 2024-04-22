@@ -75,11 +75,13 @@ contract ERC900History is IERC900 {
     }
 
     function getStakeHistory(address addr, uint32 checkpointId) external view returns (uint256, uint256) {
+        /// TODO: Need to implement where it's by timestamp and not index #
         Checkpoints.Checkpoint208 memory cp = _stakeHistories[addr].at(checkpointId);
         return (cp._value, cp._key);
     }
 
     function getTotalStakeHistory(uint32 checkpointId) external view returns (uint256, uint256) {
+        /// TODO: Need to implement where it's by timestamp and not index #
         Checkpoints.Checkpoint208 memory cp = _totalStakeHistory.at(checkpointId);
         return (cp._value, cp._key);
     }
