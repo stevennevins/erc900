@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {SafeERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Checkpoints} from "../lib/openzeppelin-contracts/contracts/utils/structs/Checkpoints.sol";
+import {Time} from "../lib/openzeppelin-contracts/contracts/utils/types/Time.sol";
 import {EnumerableSet} from "../lib/openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
 import {IERC900} from "./IERC900.sol";
 
@@ -12,14 +12,14 @@ contract ERC900History is IERC900 {
     using SafeERC20 for IERC20;
     using Checkpoints for Checkpoints.Trace208;
 
-    IERC20 private _token;
+    address public token;
 
-    mapping(address => Checkpoints.Trace208) private _stakeHistories;
-    Checkpoints.Trace208 private _totalStakeHistory;
-    EnumerableSet.AddressSet private stakers;
+    mapping(address => Checkpoints.Trace208) internal _stakeHistories;
+    Checkpoints.Trace208 internal _totalStakeHistory;
+    EnumerableSet.AddressSet internal _stakers;
 
-    constructor(IERC20 token_) {
-        _token = token_;
+    constructor(address _token) {
+        token = _token;
     }
 
     function stake(uint256 amount, bytes calldata data) external {
@@ -30,13 +30,10 @@ contract ERC900History is IERC900 {
         require(amount > 0, "Stake amount must be positive");
         require(beneficiary != address(0), "Cannot stake for zero address");
 
-        _token.safeTransferFrom(msg.sender, address(this), amount);
-        _stakeHistories[beneficiary].push(
-            uint48(block.timestamp),
-            uint208(_stakeHistories[beneficiary].latest() + amount)
-        );
-        _totalStakeHistory.push(uint48(block.timestamp), uint208(_totalStakeHistory.latest() + amount));
-        EnumerableSet.add(stakers, beneficiary);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        _stakeHistories[beneficiary].push(Time.timestamp(), uint208(_stakeHistories[beneficiary].latest() + amount));
+        _totalStakeHistory.push(Time.timestamp(), uint208(_totalStakeHistory.latest() + amount));
+        EnumerableSet.add(_stakers, beneficiary);
 
         emit Staked(beneficiary, amount, _stakeHistories[beneficiary].latest(), data);
     }
@@ -46,12 +43,12 @@ contract ERC900History is IERC900 {
         uint256 currentStake = _stakeHistories[msg.sender].latest();
         require(currentStake >= amount, "Insufficient stake");
 
-        _token.safeTransfer(msg.sender, amount);
-        _stakeHistories[msg.sender].push(uint48(block.timestamp), uint208(currentStake - amount));
-        _totalStakeHistory.push(uint48(block.timestamp), uint208(_totalStakeHistory.latest() - amount));
+        IERC20(token).safeTransfer(msg.sender, amount);
+        _stakeHistories[msg.sender].push(Time.timestamp(), uint208(currentStake - amount));
+        _totalStakeHistory.push(Time.timestamp(), uint208(_totalStakeHistory.latest() - amount));
 
         if (_stakeHistories[msg.sender].latest() == 0) {
-            EnumerableSet.remove(stakers, msg.sender);
+            EnumerableSet.remove(_stakers, msg.sender);
         }
 
         emit Unstaked(msg.sender, amount, _stakeHistories[msg.sender].latest(), data);
@@ -65,8 +62,12 @@ contract ERC900History is IERC900 {
         return _totalStakeHistory.latest();
     }
 
-    function token() external view returns (address) {
-        return address(_token);
+    function stakers() external view returns (address[] memory) {
+        return EnumerableSet.values(_stakers);
+    }
+
+    function isStaker(address user) external view returns (bool) {
+        return EnumerableSet.contains(_stakers, user);
     }
 
     function supportsHistory() external pure override returns (bool) {
