@@ -31,10 +31,13 @@ contract ERC900 is IERC900 {
         require(beneficiary != address(0), "Cannot stake for zero address");
 
         _token.safeTransferFrom(msg.sender, address(this), amount);
-        _stakeHistories[beneficiary].push(uint48(block.timestamp),uint208(_stakeHistories[beneficiary].latest() + amount));
+        _stakeHistories[beneficiary].push(
+            uint48(block.timestamp),
+            uint208(_stakeHistories[beneficiary].latest() + amount)
+        );
         _totalStakeHistory.push(uint48(block.timestamp), uint208(_totalStakeHistory.latest() + amount));
         EnumerableSet.add(stakers, beneficiary);
-        
+
         emit Staked(beneficiary, amount, _stakeHistories[beneficiary].latest(), data);
     }
 
@@ -46,7 +49,7 @@ contract ERC900 is IERC900 {
         _token.safeTransfer(msg.sender, amount);
         _stakeHistories[msg.sender].push(uint48(block.timestamp), uint208(currentStake - amount));
         _totalStakeHistory.push(uint48(block.timestamp), uint208(_totalStakeHistory.latest() - amount));
-        
+
         if (_stakeHistories[msg.sender].latest() == 0) {
             EnumerableSet.remove(stakers, msg.sender);
         }

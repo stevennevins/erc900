@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IERC900.sol";
 
-contract ERC900 is IERC900{
+contract ERC900 is IERC900 {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -49,7 +49,7 @@ contract ERC900 is IERC900{
         return _stakers.contains(user);
     }
 
-    function token() external view returns (address){
+    function token() external view returns (address) {
         return _token;
     }
 
@@ -86,4 +86,3 @@ contract ERC900 is IERC900{
         IERC20(_token).safeTransfer(user, amount);
     }
 }
-
