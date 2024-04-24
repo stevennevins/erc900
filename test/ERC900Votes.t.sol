@@ -76,7 +76,7 @@ contract ERC900VotesTest is Test {
         assertEq(erc900Votes.totalStakedFor(staker1), stakeAmount1, "Staked amount should match");
         assertEq(erc900Votes.totalStaked(), stakeAmount1, "Total staked should match");
         assertEq(erc900Votes.getVotes(staker2), 0, "Voting units for staker1 should match staked amount");
-        assertEq(erc900Votes.getVotes(staker1), 0, "Voting units for staker2 should match staked amount");
+        assertEq(erc900Votes.getVotes(staker1), stakeAmount1, "Voting units for staker2 should match staked amount");
     }
 
     function testStakeAndTransferDeleationAndReclaimAndUnstake() public {

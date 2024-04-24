@@ -61,6 +61,9 @@ contract ERC900Votes is ERC900, Votes {
         uint256 _amount,
         bytes memory _data
     ) internal virtual override {
+        if (delegates(_beneficiary) == address(0)) {
+            _delegate(_beneficiary, _beneficiary);
+        }
         super._stakeFor(_payer, _beneficiary, _amount, _data);
         _transferVotingUnits(address(0), _beneficiary, _amount);
     }
