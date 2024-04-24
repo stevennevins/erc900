@@ -17,6 +17,6 @@ contract DelegationHolderTest is Test {
 
     function testDeployCost() public {
         vm.prank(mockVotes);
-        new DelegationHolder(mockToken, address(0));
+        new DelegationHolder(address(0));
     }
 }

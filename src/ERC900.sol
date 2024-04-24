@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IERC900} from "./IERC900.sol";
 
 contract ERC900 is IERC900 {
     using SafeERC20 for IERC20;
 
-    address private _token;
+    address public token;
 
-    mapping(address => uint256) private _stakes;
+    mapping(address => uint256) internal _stakes;
 
     uint256 private _totalStaked;
 
-    constructor(address token_) {
-        _token = token_;
+    constructor(address _token) {
+        token = _token;
     }
 
     function stake(uint256 amount, bytes calldata data) external override {
@@ -38,10 +38,6 @@ contract ERC900 is IERC900 {
         return _totalStaked;
     }
 
-    function token() external view returns (address) {
-        return _token;
-    }
-
     function supportsHistory() external pure override returns (bool) {
         return true;
     }
@@ -55,7 +51,7 @@ contract ERC900 is IERC900 {
 
         emit Staked(user, amount, _stakes[user], data);
 
-        IERC20(_token).safeTransferFrom(payer, address(this), amount);
+        IERC20(token).safeTransferFrom(payer, address(this), amount);
     }
 
     function _unstake(address user, uint256 amount, bytes memory data) internal virtual {
@@ -67,6 +63,6 @@ contract ERC900 is IERC900 {
 
         emit Unstaked(user, amount, _stakes[user], data);
 
-        IERC20(_token).safeTransfer(user, amount);
+        IERC20(token).safeTransfer(user, amount);
     }
 }

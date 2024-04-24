@@ -3,45 +3,71 @@ pragma solidity ^0.8.0;
 
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {ERC900} from "./ERC900.sol";
+import {DelegationHolder} from "./DelegationHolder.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 contract ERC900Votes is ERC900, Votes {
+    /// Owner -> DelegateProxy -> Amount
+    mapping(address => mapping(address => uint256)) public encumberedVotes;
+    mapping(address => uint256) public encumberedBalanceOf;
+
     constructor(address _token, string memory _name, string memory _version) ERC900(_token) EIP712(_name, _version) {}
 
-    /// TODO: Need to track deposits and withdrawals for stakers into the delegatee pools
-    function stakeAndDelegate() external {}
-    /*
-      Flows include:
-       - I should be able to stake and not specify a delegate
-            - My stake should be delegated to myself or is undelegated
-        - I should be able to delegate portions of my stake to other accounts
-        - I should be able to transfer my delegated stake to new accounts
-        - I should be able to remove my delegated stake from accounts
-        - I should be able to unstake and remove my delegated stake
-        -
-        - With EIP3074 on the horizon it probably makes sense to keep each action atomic
-
-     */
-
-    /// TODO: Needs to undelegate from staker - Should be automatic
-    function unstake() external {
-        /// TODO: When Unstaking if unstaked all then delete delegation
-
+    function transferDelegation(address _to, uint256 _amount) external {
+        address delegationProxy = _getDelegationProxy(_to);
+        _encumber(msg.sender, delegationProxy, _amount);
     }
 
-    /// TODO: Should move tokens between pools
-    /// TODO: Needs to make sure pool exists
-    function transferDelegation(address to, uint256 amount) external {
-        _transferVotingUnits(msg.sender, to, amount);
+    function reclaimVotingPower(address _from, uint256 _amount) external {
+        address delegationProxy = _getDelegationProxy(_from);
+        _reclaim(delegationProxy, msg.sender, _amount);
     }
 
-    function transferDelegationFrom(address from, address to, uint256 amount) external {
-        /// TODO: Check that from is a pool controlled by from
-        _transferVotingUnits(from, to, amount);
+    function _getDelegationProxy(address _delegatee) internal returns (address _delegationHolder) {
+        bytes32 salt = keccak256(abi.encodePacked(token, _delegatee));
+        bytes memory constructorArgs = abi.encode(_delegatee);
+        bytes memory bytecode = bytes.concat(type(DelegationHolder).creationCode, constructorArgs);
+        address delegate = Create2.computeAddress(salt, keccak256(bytecode));
+        if (delegate.code.length == 0) {
+            Create2.deploy(0, salt, bytecode);
+        }
+
+        return delegate;
     }
 
-    function _getVotingUnits(address delegatee) internal view virtual override returns (uint256) {
-        /// TODO: Get delegatee's pool
-        /// TODO: Get balance of delegatee's pool
+    function _getVotingUnits(address _account) internal view virtual override returns (uint256) {
+        return _stakes[_account] - encumberedBalanceOf[_account];
+    }
+
+    function _encumber(address _from, address _to, uint256 _amount) internal {
+        // TODO: Confirm this isn't needed
+        // require(_getVotingUnits(_from) - encumberedBalanceOf[_from] > _amount, "Insufficient Vote Balance");
+        encumberedVotes[_from][_to] += _amount;
+        encumberedBalanceOf[_from] += _amount;
+        _transferVotingUnits(_from, _to, _amount);
+    }
+
+    function _reclaim(address _from, address _to, uint256 _amount) internal {
+        encumberedVotes[_to][_from] -= _amount;
+        encumberedBalanceOf[_to] -= _amount;
+        _transferVotingUnits(_from, _to, _amount);
+    }
+
+    function _stakeFor(
+        address _payer,
+        address _beneficiary,
+        uint256 _amount,
+        bytes memory _data
+    ) internal virtual override {
+        super._stakeFor(_payer, _beneficiary, _amount, _data);
+        _transferVotingUnits(address(0), _beneficiary, _amount);
+    }
+
+    function _unstake(address _user, uint256 _amount, bytes memory _data) internal virtual override {
+        require(_amount <= _getVotingUnits(_user), "Amount exceeds undelegated balance");
+        _transferVotingUnits(_user, address(0), _amount);
+        super._unstake(_user, _amount, _data);
     }
 }
