@@ -9,9 +9,8 @@ import {DelegationHolder} from "./DelegationHolder.sol";
 import {Test, console} from "forge-std/Test.sol";
 
 contract ERC900Votes is ERC900, Votes {
-    /// Owner -> DelegateProxy -> Amount
-    mapping(address => mapping(address => uint256)) public encumberedVotes;
-    mapping(address => uint256) public encumberedBalanceOf;
+    mapping(address owner => mapping(address delegateProxy => uint256 amount)) public encumberedVotes;
+    mapping(address owner => uint256 amount) public encumberedBalanceOf;
 
     constructor(address _token, string memory _name, string memory _version) ERC900(_token) EIP712(_name, _version) {}
 
@@ -42,8 +41,6 @@ contract ERC900Votes is ERC900, Votes {
     }
 
     function _encumber(address _from, address _to, uint256 _amount) internal {
-        // TODO: Confirm this isn't needed
-        // require(_getVotingUnits(_from) - encumberedBalanceOf[_from] > _amount, "Insufficient Vote Balance");
         encumberedVotes[_from][_to] += _amount;
         encumberedBalanceOf[_from] += _amount;
         _transferVotingUnits(_from, _to, _amount);
