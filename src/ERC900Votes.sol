@@ -48,7 +48,7 @@ contract ERC900Votes is ERC900, Votes {
     function _getDelegationProxy(address _delegatee) internal returns (address _delegationHolder) {
         bytes32 salt = keccak256(abi.encodePacked(token, _delegatee));
         bytes memory constructorArgs = abi.encode(_delegatee);
-        bytes memory bytecode = bytes.concat(type(DelegationHolder).creationCode, constructorArgs);
+        bytes memory bytecode = bytes.concat(type(DelegationProxy).creationCode, constructorArgs);
         address delegate = Create2.computeAddress(salt, keccak256(bytecode));
         if (delegate.code.length == 0) {
             Create2.deploy(0, salt, bytecode);
