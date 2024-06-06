@@ -9,16 +9,16 @@ import {DelegationProxy} from "./DelegationProxy.sol";
 
 /// @title ERC900Votes Contract
 /// @notice This contract extends the ERC900 staking standard with voting capabilities, integrating OpenZeppelin's Votes and EIP712 for secure voting.
-/// @dev The contract uses a delegation system where votes can be encumbered (locked) when delegated to another address.
+/// @dev The contract uses a delegation system where votes can be delegated (locked) when delegated to another address.
 /// This allows for the creation of a flexible and secure voting system on top of the staking functionality provided by ERC900.
 contract ERC900Votes is ERC900, Votes {
-    /// @notice Tracks the amount of votes encumbered by delegation for each owner to each delegate proxy.
-    /// @dev Key1: Owner's address, Key2: Delegate proxy's address, Value: Amount of encumbered votes.
-    mapping(address => mapping(address => uint256)) public encumberedVotes;
+    /// @notice Tracks the amount of votes delegated by each owner.
+    /// @dev Key1: Owner's address, Key2: Delegate proxy's address, Value: Amount of delegated votes.
+    mapping(address => mapping(address => uint256)) public delegatedVotes;
 
-    /// @notice Tracks the total amount of votes encumbered by an owner due to delegation.
-    /// @dev Key: Owner's address, Value: Total amount of encumbered votes.
-    mapping(address => uint256) public encumberedBalanceOf;
+    /// @notice Tracks the total amount of votes delegated by an owner due to delegation.
+    /// @dev Key: Owner's address, Value: Total amount of delegated votes.
+    mapping(address => uint256) public delegatedBalanceOf;
 
     /// @notice Initializes a new ERC900Votes contract with specified token, name, and version for EIP712 domain.
     /// @param _token The address of the token used for staking.
@@ -26,20 +26,20 @@ contract ERC900Votes is ERC900, Votes {
     /// @param _version The version used in the EIP712 domain.
     constructor(address _token, string memory _name, string memory _version) ERC900(_token) EIP712(_name, _version) {}
 
-    /// @notice Transfers delegation from the caller to another address by encumbering the specified amount of votes.
+    /// @notice Transfers delegation from the caller to another address by delegating the specified amount of votes.
     /// @param _to The address to which the delegation is transferred.
     /// @param _amount The amount of votes to delegate.
     function transferDelegation(address _to, uint256 _amount) external {
         address delegationProxy = _getDelegationProxy(_to);
-        _encumber(msg.sender, delegationProxy, _amount);
+        _delegateVotes(msg.sender, delegationProxy, _amount);
     }
 
-    /// @notice Reclaims delegated voting power from a delegate by unencumbering the specified amount of votes.
+    /// @notice Reclaims delegated voting power from a delegate by undelegating the specified amount of votes.
     /// @param _from The address from which the voting power is reclaimed.
     /// @param _amount The amount of votes to reclaim.
     function reclaimVotingPower(address _from, uint256 _amount) external {
         address delegationProxy = _getDelegationProxy(_from);
-        _reclaim(delegationProxy, msg.sender, _amount);
+        _undelegateVotes(delegationProxy, msg.sender, _amount);
     }
 
     /// @dev Retrieves or creates a delegation proxy for a given delegatee using deterministic deployment.
@@ -57,30 +57,30 @@ contract ERC900Votes is ERC900, Votes {
         return delegate;
     }
 
-    /// @dev Calculates the voting units available to an account, considering encumbered votes.
+    /// @dev Calculates the voting units available to an account, considering delegated votes.
     /// @param _account The address of the account.
     /// @return The number of voting units available.
     function _getVotingUnits(address _account) internal view virtual override returns (uint256) {
-        return _stakes[_account] - encumberedBalanceOf[_account];
+        return _stakes[_account] - delegatedBalanceOf[_account];
     }
 
-    /// @dev Encumbers a specified amount of votes from one address to another
-    /// @param _from The address from which votes are encumbered.
-    /// @param _to The address to which votes are encumbered.
-    /// @param _amount The amount of votes to encumber.
-    function _encumber(address _from, address _to, uint256 _amount) internal {
-        encumberedVotes[_from][_to] += _amount;
-        encumberedBalanceOf[_from] += _amount;
+    /// @dev Delegates a specified amount of votes from one address to another
+    /// @param _from The address from which votes are delegated.
+    /// @param _to The address to which votes are delegated.
+    /// @param _amount The amount of votes to delegate.
+    function _delegateVotes(address _from, address _to, uint256 _amount) internal {
+        delegatedVotes[_from][_to] += _amount;
+        delegatedBalanceOf[_from] += _amount;
         _transferVotingUnits(_from, _to, _amount);
     }
 
-    /// @dev Reclaims a specified amount of encumbered votes from one address to another
-    /// @param _from The address from which votes are reclaimed.
-    /// @param _to The address to which votes are reclaimed.
-    /// @param _amount The amount of votes to reclaim.
-    function _reclaim(address _from, address _to, uint256 _amount) internal {
-        encumberedVotes[_to][_from] -= _amount;
-        encumberedBalanceOf[_to] -= _amount;
+    /// @dev Undelegates a specified amount of delegated votes from one address to another
+    /// @param _from The address from which votes are undelegated.
+    /// @param _to The address to which votes are undelegated.
+    /// @param _amount The amount of votes to undelegate.
+    function _undelegateVotes(address _from, address _to, uint256 _amount) internal {
+        delegatedVotes[_to][_from] -= _amount;
+        delegatedBalanceOf[_to] -= _amount;
         _transferVotingUnits(_from, _to, _amount);
     }
 
